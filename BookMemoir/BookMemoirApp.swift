@@ -30,6 +30,7 @@ class Book {
     var startDate: Date?
     var notes: String?
     var summary: String?
+    var finishDate: Date?
 
     init(title: String, author: String, coverURL: String? = nil, status: ReadingStatus = .toRead) {
         self.id = UUID()
@@ -38,6 +39,14 @@ class Book {
         self.coverURL = coverURL
         self.status = status
     }
+    
+    var readingDuration: Int? {
+            guard let start = startDate, let finish = finishDate else {
+                return nil
+            }
+            let days = Calendar.current.dateComponents([.day], from: start, to: finish).day
+            return days
+        }
 }
 
 enum ReadingStatus: String, CaseIterable, Identifiable, Codable {
@@ -55,6 +64,7 @@ struct LibraryView: View {
     @Environment(\.modelContext) private var context
     @Query var books: [Book]
     @State private var selectedStatus: ReadingStatus = .toRead
+    @Binding var selectedTab: Tab
 
     var filteredBooks: [Book] {
         books.filter { $0.status == selectedStatus }
@@ -81,17 +91,13 @@ struct LibraryView: View {
             }
             .navigationTitle("BookMemoir")
         }
+        .onAppear {
+            selectedStatus = .toRead
+            selectedTab = .library
+        }
     }
     
-    func fixedURL(from coverURL: String) -> URL? {
-        guard var urlString = coverURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            return nil
-        }
-        if urlString.hasPrefix("http://") {
-            urlString = urlString.replacingOccurrences(of: "http://", with: "https://")
-        }
-        return URL(string: urlString)
-    }
+    
 
     // MARK: - To-Read View
     @ViewBuilder
@@ -177,6 +183,11 @@ struct LibraryView: View {
                     if let summary = book.summary {
                         Text(summary).font(.subheadline)
                     }
+                    if let days = book.readingDuration {
+                        Text("Finished in \(days) days")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
@@ -208,6 +219,7 @@ struct ReadingDetailView: View {
 
             Button("Mark as Finished") {
                 book.status = .finished
+                book.finishDate = Date()
                 try? context.save()
             }
             .foregroundColor(.green)
@@ -216,11 +228,24 @@ struct ReadingDetailView: View {
     }
 }
 
+func fixedURL(from coverURL: String) -> URL? {
+    guard var urlString = coverURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+        return nil
+    }
+    if urlString.hasPrefix("http://") {
+        urlString = urlString.replacingOccurrences(of: "http://", with: "https://")
+    }
+    return URL(string: urlString)
+}
+
 
 // Add Book View
 struct AddBookView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) private var context
+    @Binding var selectedTab: Tab
+    @Binding var selectedStatus: ReadingStatus
+    
     @State private var isbn: String = ""
     @State private var title: String = ""
     @State private var subtitle: String = ""
@@ -256,9 +281,9 @@ struct AddBookView: View {
                 if !title.isEmpty {
                     Section(header: Text("Book Details")) {
                         if !coverURL.isEmpty {
-                            AsyncImage(url: URL(string: coverURL)) { image in
-                                image
-                                    .resizable()
+                            let url = fixedURL(from: coverURL)
+                            AsyncImage(url: url) { image in
+                                image.resizable()
                                     .scaledToFit()
                                     .frame(height: 200)
                             } placeholder: {
@@ -285,7 +310,18 @@ struct AddBookView: View {
                         let newBook = Book(title: title, author: author, coverURL: coverURL, status: .toRead)
                         context.insert(newBook)
                         try? context.save()
-                        dismiss()
+                        
+                        isbn = ""
+                        title = ""
+                        subtitle = ""
+                        author = ""
+                        publishedDate = ""
+                        pageCount = nil
+                        coverURL = ""
+                        
+                        selectedStatus = .toRead
+                        selectedTab = .library
+//                        dismiss()
                     }
                     .disabled(title.isEmpty)
                 }

@@ -22,6 +22,7 @@
 		DC9E8C502E42CCDE005C9A46 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DC9E8C522E42CCDE005C9A46 /* BookMemoir.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BookMemoir.entitlements; sourceTree = "<group>"; };
 		DC9E8C542E42CCDE005C9A46 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		DC9E8C5B2E529650005C9A46 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +55,7 @@
 		DC9E8C492E42CCDD005C9A46 /* BookMemoir */ = {
 			isa = PBXGroup;
 			children = (
+				DC9E8C5B2E529650005C9A46 /* Info.plist */,
 				DC9E8C4A2E42CCDD005C9A46 /* BookMemoirApp.swift */,
 				DC9E8C4C2E42CCDD005C9A46 /* ContentView.swift */,
 				DC9E8C4E2E42CCDD005C9A46 /* Item.swift */,
@@ -279,6 +281,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BookMemoir/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -318,6 +321,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BookMemoir/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
