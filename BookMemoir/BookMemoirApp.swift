@@ -258,6 +258,14 @@ struct AddBookView: View {
     @Binding var selectedTab: Tab
     @Binding var selectedStatus: ReadingStatus
     
+    enum InputMode: String, CaseIterable, Identifiable {
+        case isbn = "Search by ISBN"
+        case manual = "Manual Entry"
+        var id: String { rawValue }
+    }
+    
+    @State private var inputMode: InputMode = .isbn
+    
     @State private var isbn: String = ""
     @State private var title: String = ""
     @State private var subtitle: String = ""
@@ -269,81 +277,100 @@ struct AddBookView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Search by ISBN")) {
-                    TextField("Enter ISBN", text: $isbn)
-                        .keyboardType(.numberPad)
-                    
-                    Button("Fetch Book Info") {
-                        fetchBookInfo()
-                    }
-                    .disabled(isbn.isEmpty)
-                }
-                
-                if isLoading {
-                    ProgressView("Loading...")
-                }
-                
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                }
-                
-                if !title.isEmpty {
-                    Section(header: Text("Book Details")) {
-                        if !coverURL.isEmpty {
-                            let url = fixedURL(from: coverURL)
-                            AsyncImage(url: url) { image in
-                                image.resizable()
-                                    .scaledToFit()
-                                    .frame(height: 200)
-                            } placeholder: {
-                                ProgressView()
+            NavigationView {
+                Form {
+                    // Mode Picker
+                    Section {
+                        Picker("Input Mode", selection: $inputMode) {
+                            ForEach(InputMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
                             }
                         }
-                        
-                        Text("Title: \(title)")
-                        if !subtitle.isEmpty {
-                            Text("Subtitle: \(subtitle)")
+                        .pickerStyle(.segmented)
+                        .listRowBackground(Color.clear)
+                    }
+                    
+                    // ISBN Search Mode
+                    
+                    if inputMode == .isbn {
+                        Section(header: Text("Search by ISBN")) {
+                            TextField("Enter ISBN", text: $isbn)
+                                .keyboardType(.numberPad)
+                            
+                            Button("Fetch Book Info") {
+                                fetchBookInfo()
+                            }
+                            .disabled(isbn.isEmpty)
                         }
-                        Text("Author: \(author)")
-                        Text("Published: \(publishedDate)")
-                        if let pages = pageCount {
-                            Text("Pages: \(pages)")
+                        
+                        if isLoading {
+                            ProgressView("Loading...")
+                        }
+                        
+                        if let errorMessage = errorMessage {
+                            Text(errorMessage)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    // Manual Input Mode
+                    if inputMode == .manual || !title.isEmpty {
+                        Section(header: Text("Book Details")) {
+                            TextField("Title", text: $title)
+                            TextField("Subtitle", text: $subtitle)
+                            TextField("Author", text: $author)
+                            TextField("Published Date", text: $publishedDate)
+                            TextField("Page Count", value: $pageCount, formatter: NumberFormatter())
+                                .keyboardType(.numberPad)
+                            TextField("Cover URL", text: $coverURL)
+                            
+                            if let url = fixedURL(from: coverURL), !coverURL.isEmpty {
+                                AsyncImage(url: url) { image in
+                                    image.resizable()
+                                        .scaledToFit()
+                                        .frame(height: 200)
+                                } placeholder: {
+                                    ProgressView()
+                                }
+                            }
                         }
                     }
                 }
-            }
-            .navigationTitle("Add Book")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let newBook = Book(title: title, author: author, coverURL: coverURL, status: .toRead)
-                        context.insert(newBook)
-                        try? context.save()
-                        
-                        isbn = ""
-                        title = ""
-                        subtitle = ""
-                        author = ""
-                        publishedDate = ""
-                        pageCount = nil
-                        coverURL = ""
-                        
-                        selectedStatus = .toRead
-                        selectedTab = .library
-//                        dismiss()
+                .navigationTitle("Add Book")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            let newBook = Book(
+                                title: title,
+                                author: author,
+                                coverURL: coverURL,
+                                status: .toRead
+                            )
+                            context.insert(newBook)
+                            try? context.save()
+                            
+                            resetFields()
+                            
+                            selectedStatus = .toRead
+                            selectedTab = .library
+                        }
+                        .disabled(title.isEmpty)
                     }
-                    .disabled(title.isEmpty)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
                     }
                 }
             }
         }
+    
+    private func resetFields() {
+        isbn = ""
+        title = ""
+        subtitle = ""
+        author = ""
+        publishedDate = ""
+        pageCount = nil
+        coverURL = ""
     }
     
     private func fetchBookInfo() {
