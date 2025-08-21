@@ -188,15 +188,16 @@ struct LibraryView: View {
     var finishedListView: some View {
         List {
             ForEach(filteredBooks) { book in
-                VStack(alignment: .leading) {
-                    Text(book.title).font(.headline)
-                    if let summary = book.summary {
-                        Text(summary).font(.subheadline)
-                    }
-                    if let days = book.readingDuration {
-                        Text("Finished in \(days) days")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                NavigationLink(destination: BookDetailView(book: book)) {
+                    VStack(alignment: .leading) {
+                        Text(book.title)
+                            .font(.headline)
+
+                        if let days = book.readingDuration {
+                            Text("Finished in \(days) days")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
             }
@@ -422,46 +423,61 @@ struct AddBookView: View {
 }
 
 // Book Detail View
-//struct BookDetailView: View {
-//    @Bindable var book: Book
-//    @State private var editingNotes = false
-//    @State private var editingSummary = false
-//
-//    var body: some View {
-//        VStack(alignment: .leading, spacing: 20) {
-//            Text(book.title)
-//                .font(.largeTitle)
-//                .bold()
-//
-//            Text("Status: \(book.status.rawValue)")
-//                .foregroundColor(.secondary)
-//
-//            Divider()
-//
-//            VStack(alignment: .leading) {
-//                Text("Notes").font(.headline)
-//                Text(book.notes.isEmpty ? "No notes yet." : book.notes)
-//                Button("Edit Notes") { editingNotes = true }
-//            }
-//
-//            VStack(alignment: .leading) {
-//                Text("Summary").font(.headline)
-//                Text(book.summary.isEmpty ? "No summary yet." : book.summary)
-//                Button("Edit Summary") { editingSummary = true }
-//            }
-//
-//            Spacer()
-//        }
-//        .padding()
-//        .navigationTitle("Book Details")
-//        .sheet(isPresented: $editingNotes) {
-//            EditTextView(title: "Edit Notes", text: $book.notes)
-//        }
-//        .sheet(isPresented: $editingSummary) {
-//            EditTextView(title: "Edit Summary", text: $book.summary)
-//        }
-//    }
-//}
+struct BookDetailView: View {
+    let book: Book
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let coverURL = book.coverURL,
+                   let url = fixedURL(from: coverURL) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                            .scaledToFit()
+                            .frame(height: 250)
+                            .cornerRadius(12)
+                    } placeholder: {
+                        ProgressView()
+                    }
+                }
+
+                Text(book.title)
+                    .font(.title)
+                    .bold()
+
+                Text("By \(book.author)")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+
+                if let summary = book.summary {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Summary")
+                            .font(.headline)
+                        Text(summary)
+                            .font(.body)
+                    }
+                }
+
+                if let notes = book.notes {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Notes")
+                            .font(.headline)
+                        Text(notes)
+                            .font(.body)
+                    }
+                }
+
+                if let days = book.readingDuration {
+                    Text("You finished this book in \(days) days.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Book Details")
+    }
+}
 
 // Edit Text View
 struct EditTextView: View {
