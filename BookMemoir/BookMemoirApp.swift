@@ -70,32 +70,6 @@ struct LibraryView: View {
         books.filter { $0.status == selectedStatus }
     }
 
-//    var body: some View {
-//        NavigationView {
-//            VStack {
-//                Picker("Status", selection: $selectedStatus) {
-//                    ForEach(ReadingStatus.allCases) { status in
-//                        Text(status.rawValue).tag(status)
-//                    }
-//                }
-//                .pickerStyle(SegmentedPickerStyle())
-//                .padding()
-//
-//                if selectedStatus == .toRead {
-//                    toReadPageView
-//                } else if selectedStatus == .reading {
-//                    readingListView
-//                } else {
-//                    finishedListView
-//                }
-//            }
-//            .navigationTitle("BookMemoir")
-//        }
-//        .onAppear {
-//            selectedStatus = .toRead
-//            selectedTab = .library
-//        }
-//    }
     var body: some View {
         NavigationView {
             VStack() {
