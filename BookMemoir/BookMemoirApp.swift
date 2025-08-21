@@ -70,9 +70,36 @@ struct LibraryView: View {
         books.filter { $0.status == selectedStatus }
     }
 
+//    var body: some View {
+//        NavigationView {
+//            VStack {
+//                Picker("Status", selection: $selectedStatus) {
+//                    ForEach(ReadingStatus.allCases) { status in
+//                        Text(status.rawValue).tag(status)
+//                    }
+//                }
+//                .pickerStyle(SegmentedPickerStyle())
+//                .padding()
+//
+//                if selectedStatus == .toRead {
+//                    toReadPageView
+//                } else if selectedStatus == .reading {
+//                    readingListView
+//                } else {
+//                    finishedListView
+//                }
+//            }
+//            .navigationTitle("BookMemoir")
+//        }
+//        .onAppear {
+//            selectedStatus = .toRead
+//            selectedTab = .library
+//        }
+//    }
     var body: some View {
         NavigationView {
-            VStack {
+            VStack() {
+                // Sticky Picker at top
                 Picker("Status", selection: $selectedStatus) {
                     ForEach(ReadingStatus.allCases) { status in
                         Text(status.rawValue).tag(status)
@@ -80,20 +107,22 @@ struct LibraryView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
+                .background(Color(.systemBackground)) // ensures solid bg under picker
+                .zIndex(1) // keep above scrolling content
 
-                if selectedStatus == .toRead {
-                    toReadPageView
-                } else if selectedStatus == .reading {
-                    readingListView
-                } else {
-                    finishedListView
+                // Content Area
+                Group {
+                    if selectedStatus == .toRead {
+                        toReadPageView
+                    } else if selectedStatus == .reading {
+                        readingListView
+                    } else {
+                        finishedListView
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity) // occupy remaining space
             }
             .navigationTitle("BookMemoir")
-        }
-        .onAppear {
-            selectedStatus = .toRead
-            selectedTab = .library
         }
     }
     
@@ -143,16 +172,21 @@ struct LibraryView: View {
                                 Text("Start Reading")
                                     .padding()
                                     .frame(maxWidth: .infinity)
-                                    .background(Color.blue)
+                                    .background(Color(hex: 0x02B2D7))
                                     .foregroundColor(.white)
                                     .cornerRadius(8)
                             }
-                            .padding(.top, 12)
+                            .padding(.bottom, 40)
                         }
                         .padding()
+                        .background(Color(hex: 0xcacfd7, opacity: 0.3))
+                        .cornerRadius(16)
+                        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 2)
+                        .padding(.horizontal, 24)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(height: 400)
             }
     }
 
@@ -166,12 +200,14 @@ struct LibraryView: View {
                         if let date = book.startDate {
                             Text("Started: \(date.formatted(date: .abbreviated, time: .omitted))")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(hex: 0x0279a8))
                         }
                     }
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color(hex: 0x3d3d9de, opacity: 0.3))
     }
 
     // MARK: - Finished View
@@ -191,6 +227,8 @@ struct LibraryView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color(hex: 0x3d3d9de, opacity: 0.3))
     }
 }
 
@@ -444,5 +482,17 @@ struct EditTextView: View {
             }
             .navigationTitle(title)
         }
+    }
+}
+
+extension Color {
+    init(hex: Int, opacity: Double = 1) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xff) / 255,
+            green: Double((hex >> 08) & 0xff) / 255,
+            blue: Double((hex >> 00) & 0xff) / 255,
+            opacity: opacity
+        )
     }
 }
