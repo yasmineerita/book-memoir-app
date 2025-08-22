@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 @main
 struct BookMemoirApp: App {
@@ -32,14 +33,16 @@ class Book {
     var summary: String?
     var finishDate: Date?
     var pageCount: Int?
+    var coverImageData: Data?
 
-    init(title: String, author: String, coverURL: String? = nil, pageCount: Int? = nil, status: ReadingStatus = .toRead) {
+    init(title: String, author: String, coverURL: String? = nil, pageCount: Int? = nil, status: ReadingStatus = .toRead, coverImageData: Data? = nil) {
         self.id = UUID()
         self.title = title
         self.author = author
         self.coverURL = coverURL
         self.status = status
         self.pageCount = pageCount
+        self.coverImageData = coverImageData
         
     }
     
@@ -128,7 +131,12 @@ struct LibraryView: View {
                 TabView {
                     ForEach(filteredBooks) { book in
                         VStack {
-                            if let cover = book.coverURL,
+                            if let imageData = book.coverImageData, let uiImage = UIImage(data: imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 200)
+                            } else if let cover = book.coverURL,
                                let url = fixedURL(from: cover) {
                                 AsyncImage(url: url) { image in
                                     image.resizable()
@@ -157,7 +165,7 @@ struct LibraryView: View {
                                 book.startDate = Date()
                                 try? context.save()
                             }) {
-                                Text("Start Reading")
+                                Text("Start Reading 🤓")
                                     .padding()
                                     .frame(maxWidth: .infinity)
                                     .background(Color("ButtonPrimary"))
@@ -246,7 +254,7 @@ struct ReadingDetailView: View {
             }
             .foregroundColor(Color("BodyText"))
 
-            Button("Mark as Finished") {
+            Button("Mark as Finished ✅") {
                 book.status = .finished
                 book.finishDate = Date()
                 try? context.save()
@@ -292,6 +300,9 @@ struct AddBookView: View {
     @State private var coverURL: String = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    
+    @State private var selectedCoverPhoto: PhotosPickerItem?
+    @State private var coverUIImage: UIImage?
     
     private var pageCountTextBinding: Binding<String> {
             Binding<String>(
@@ -356,16 +367,40 @@ struct AddBookView: View {
                             TextField("Published Date", text: $publishedDate)
                             TextField("Page Count", text: pageCountTextBinding)
                                                         .keyboardType(.numberPad)
-                            
-                            TextField("Cover URL", text: $coverURL)
-                            
-                            if let url = fixedURL(from: coverURL), !coverURL.isEmpty {
+                            PhotosPicker(selection: $selectedCoverPhoto, matching: .images) {
+                                Label("Select Cover Image", systemImage: "photo.on.rectangle.angled")
+                            }
+                            .buttonStyle(.borderless)
+                            if let uiImage = coverUIImage {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 200)
+                                    .cornerRadius(8)
+                            } else if let url = fixedURL(from: coverURL), !coverURL.isEmpty {
                                 AsyncImage(url: url) { image in
                                     image.resizable()
                                         .scaledToFit()
                                         .frame(height: 200)
+                                        .cornerRadius(8)
                                 } placeholder: {
                                     ProgressView()
+                                }
+                            }
+                            
+                            TextField("Cover URL (Optional)", text: $coverURL)
+                        }
+                        
+                        .onChange(of: selectedCoverPhoto) { _, newSelection in
+                            Task {
+                                if let newSelection = newSelection,
+                                   let data = try? await newSelection.loadTransferable(type: Data.self) {
+                                    if let uiImage = UIImage(data: data) {
+                                        self.coverUIImage = uiImage
+                                        self.coverURL = ""
+                                    }
+                                } else {
+                                    self.coverUIImage = nil 
                                 }
                             }
                         }
@@ -380,7 +415,8 @@ struct AddBookView: View {
                                 author: author,
                                 coverURL: coverURL,
                                 pageCount: pageCount,
-                                status: .toRead
+                                status: .toRead,
+                                coverImageData: coverUIImage?.jpegData(compressionQuality: 0.8)
                             )
                             context.insert(newBook)
                             try? context.save()
@@ -412,6 +448,8 @@ struct AddBookView: View {
         publishedDate = ""
         pageCount = nil
         coverURL = ""
+        selectedCoverPhoto = nil
+        coverUIImage = nil
     }
     
     private func fetchBookInfo() {
@@ -469,17 +507,23 @@ struct BookDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if let coverURL = book.coverURL,
-                   let url = fixedURL(from: coverURL) {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                            .scaledToFit()
-                            .frame(height: 250)
-                            .cornerRadius(12)
-                    } placeholder: {
-                        ProgressView()
+                if let imageData = book.coverImageData, let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 250)
+                        .cornerRadius(12)
+                    } else if let coverURL = book.coverURL,
+                       let url = fixedURL(from: coverURL) {
+                        AsyncImage(url: url) { image in
+                            image.resizable()
+                                .scaledToFit()
+                                .frame(height: 250)
+                                .cornerRadius(12)
+                        } placeholder: {
+                            ProgressView()
+                        }
                     }
-                }
 
                 Text(book.title)
                     .font(.title)
