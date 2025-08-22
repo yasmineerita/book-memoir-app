@@ -32,6 +32,7 @@ struct ContentView: View {
                 }
                 .tag(Tab.addBook)
         }
+        .tint(Color("TabBarSelected"))
     }
 }
 

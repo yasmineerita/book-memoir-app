@@ -69,11 +69,22 @@ struct LibraryView: View {
     var filteredBooks: [Book] {
         books.filter { $0.status == selectedStatus }
     }
+    
+    init(selectedTab: Binding<Tab>) {
+        self._selectedTab = selectedTab
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.systemBackground
+        appearance.titleTextAttributes = [.foregroundColor: UIColor(named: "AppTitle") ?? .label]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor(named: "AppTitle") ?? .label]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+    }
 
     var body: some View {
         NavigationView {
             VStack() {
-                // Sticky Picker at top
                 Picker("Status", selection: $selectedStatus) {
                     ForEach(ReadingStatus.allCases) { status in
                         Text(status.rawValue).tag(status)
@@ -81,8 +92,8 @@ struct LibraryView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
-                .background(Color(.systemBackground)) // ensures solid bg under picker
-                .zIndex(1) // keep above scrolling content
+                .background(Color(.systemBackground))
+                .zIndex(1)
 
                 // Content Area
                 Group {
@@ -94,7 +105,7 @@ struct LibraryView: View {
                         finishedListView
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity) // occupy remaining space
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle("BookMemoir")
         }
@@ -146,14 +157,14 @@ struct LibraryView: View {
                                 Text("Start Reading")
                                     .padding()
                                     .frame(maxWidth: .infinity)
-                                    .background(Color(hex: 0x02B2D7))
-                                    .foregroundColor(.white)
+                                    .background(Color("ButtonPrimary"))
+                                    .foregroundColor(Color("StartBtnText"))
                                     .cornerRadius(8)
                             }
                             .padding(.bottom, 40)
                         }
                         .padding()
-                        .background(Color(hex: 0xcacfd7, opacity: 0.3))
+                        .background(Color("CardBackground"))
                         .cornerRadius(16)
                         .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 2)
                         .padding(.horizontal, 24)
@@ -173,15 +184,15 @@ struct LibraryView: View {
                         Text(book.title).font(.headline)
                         if let date = book.startDate {
                             Text("Started: \(date.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption)
-                                .foregroundColor(Color(hex: 0x0279a8))
+                                .font(.subheadline)
+                                .foregroundColor(Color("HighlightText"))
                         }
                     }
                 }
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color(hex: 0x3d3d9de, opacity: 0.3))
+        .background(Color("Background"))
     }
 
     // MARK: - Finished View
@@ -196,14 +207,14 @@ struct LibraryView: View {
                         if let days = book.readingDuration {
                             Text("Finished in \(days) days")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color("Finish"))
                         }
                     }
                 }
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color(hex: 0x3d3d9de, opacity: 0.3))
+        .background(Color("Background"))
     }
 }
 
@@ -221,6 +232,7 @@ struct ReadingDetailView: View {
                 ))
                 .frame(height: 100)
             }
+            .foregroundColor(Color("BodyText"))
 
             Section(header: Text("Summary")) {
                 TextEditor(text: Binding(
@@ -229,13 +241,14 @@ struct ReadingDetailView: View {
                 ))
                 .frame(height: 150)
             }
+            .foregroundColor(Color("BodyText"))
 
             Button("Mark as Finished") {
                 book.status = .finished
                 book.finishDate = Date()
                 try? context.save()
             }
-            .foregroundColor(.green)
+            .foregroundColor(Color("Finish"))
         }
         .navigationTitle(book.title)
     }
@@ -297,8 +310,7 @@ struct AddBookView: View {
                         Section(header: Text("Search by ISBN")) {
                             TextField("Enter ISBN", text: $isbn)
                                 .keyboardType(.numberPad)
-                            
-                            Button("Fetch Book Info") {
+                            Button("Search Book Info") {
                                 fetchBookInfo()
                             }
                             .disabled(isbn.isEmpty)
@@ -340,7 +352,7 @@ struct AddBookView: View {
                 .navigationTitle("Add Book")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
+                        Button("Add") {
                             let newBook = Book(
                                 title: title,
                                 author: author,
@@ -358,7 +370,12 @@ struct AddBookView: View {
                         .disabled(title.isEmpty)
                     }
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
+                        Button("Cancel") {
+                            dismiss()
+                            resetFields()
+                            selectedStatus = .toRead
+                            selectedTab = .library
+                        }
                     }
                 }
             }
