@@ -31,13 +31,16 @@ class Book {
     var notes: String?
     var summary: String?
     var finishDate: Date?
+    var pageCount: Int?
 
-    init(title: String, author: String, coverURL: String? = nil, status: ReadingStatus = .toRead) {
+    init(title: String, author: String, coverURL: String? = nil, pageCount: Int? = nil, status: ReadingStatus = .toRead) {
         self.id = UUID()
         self.title = title
         self.author = author
         self.coverURL = coverURL
         self.status = status
+        self.pageCount = pageCount
+        
     }
     
     var readingDuration: Int? {
@@ -289,6 +292,24 @@ struct AddBookView: View {
     @State private var coverURL: String = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    
+    private var pageCountTextBinding: Binding<String> {
+            Binding<String>(
+                get: {
+                    if let count = pageCount, count > 0 {
+                        return String(count)
+                    }
+                    return ""
+                },
+                set: { newValue in
+                    if let newCount = Int(newValue) {
+                        pageCount = newCount
+                    } else if newValue.isEmpty {
+                        pageCount = nil
+                    }
+                }
+            )
+        }
 
     var body: some View {
             NavigationView {
@@ -333,8 +354,9 @@ struct AddBookView: View {
                             TextField("Subtitle", text: $subtitle)
                             TextField("Author", text: $author)
                             TextField("Published Date", text: $publishedDate)
-                            TextField("Page Count", value: $pageCount, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
+                            TextField("Page Count", text: pageCountTextBinding)
+                                                        .keyboardType(.numberPad)
+                            
                             TextField("Cover URL", text: $coverURL)
                             
                             if let url = fixedURL(from: coverURL), !coverURL.isEmpty {
@@ -357,6 +379,7 @@ struct AddBookView: View {
                                 title: title,
                                 author: author,
                                 coverURL: coverURL,
+                                pageCount: pageCount,
                                 status: .toRead
                             )
                             context.insert(newBook)
@@ -465,6 +488,12 @@ struct BookDetailView: View {
                 Text("By \(book.author)")
                     .font(.headline)
                     .foregroundColor(.secondary)
+                
+                if let pgCount = book.pageCount {
+                    Text("\(pgCount) pages")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
 
                 if let summary = book.summary {
                     VStack(alignment: .leading, spacing: 8) {
